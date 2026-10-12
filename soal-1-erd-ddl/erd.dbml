@@ -1,0 +1,32 @@
+Table chart_of_accounts {
+  account_id      serial       [pk]
+  account_code    varchar(20)  [not null, unique]
+  account_name    varchar(100) [not null]
+  normal_balance  varchar(6)   [not null]
+  report_class    varchar(20)  [not null]
+  created_at      timestamp    [not null]
+
+  Note: 'Bagan akun / Chart of Accounts'
+}
+
+Table journal_headers {
+  header_id       serial      [pk]
+  trx_date        date        [not null]
+  reference_no    varchar(50) [not null, unique]
+  description     text
+  status_posting  varchar(10) [not null, default: 'DRAFT']
+  created_by      varchar(50) [not null]
+  created_at      timestamp   [not null]
+
+  Note: 'Header jurnal / voucher'
+}
+
+Table journal_lines {
+  line_id     serial        [pk]
+  header_id   int           [not null, ref: > journal_headers.header_id]
+  account_id  int           [not null, ref: > chart_of_accounts.account_id]
+  debit       numeric(15,2) [not null, default: 0]
+  credit      numeric(15,2) [not null, default: 0]
+
+  Note: 'Baris jurnal debit/kredit'
+}
