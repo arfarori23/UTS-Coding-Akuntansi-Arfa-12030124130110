@@ -1,7 +1,7 @@
 # UTS Coding Akuntansi — FEB Undip
 
-**Nama**   : <ARFA IDRAKI RORI>
-**NIM**    : <12030124130110>
+**Nama**   : Arfa Idraki Rori
+**NIM**    : 12030124130110
 **Kelas**  : S1 Akuntansi Reguler
 **Dosen**  : Totok Dewayanto
 **Tanggal**: Senin, 19 Oktober 2026
