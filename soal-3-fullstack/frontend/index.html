@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voucher Entri Kas Keluar</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+   <!-- Supabase Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Konfigurasi (ganti nanti dengan nilai asli) -->
+<script>
+  window.SUPABASE_URL = "https://xxxxx.supabase.co";
+  window.SUPABASE_ANON_KEY = "eyJhbGci...";
+</script>
+
+<!-- App Logic -->
+<script src="app.js"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 min-h-screen py-8 px-4 sm:px-6 lg:px-8 font-sans antialiased text-slate-800">
+
+    <div class="max-w-5xl mx-auto">
+        <!-- Card Utama -->
+        <div class="bg-white rounded-xl shadow-xl border border-slate-200/80 overflow-hidden transition-all duration-300">
+            
+            <!-- Form Header & Judul -->
+            <div class="border-b border-slate-100 bg-slate-50/50 p-6 sm:p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Voucher Entri Kas Keluar</h1>
+                        <p class="text-sm text-slate-500 mt-1">Lengkapi data transaksi kas keluar dan pastikan jurnal dalam keadaan seimbang (balance).</p>
+                    </div>
+                    <div class="hidden sm:block">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            Modul Keuangan
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Grid 3 Kolom Input Header -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label for="tanggal" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                            Tanggal <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="date" id="tanggal" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" oninput="updateBalance()">
+                    </div>
+
+                    <div>
+                        <label for="noVoucher" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                            Nomor Voucher <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" id="noVoucher" placeholder="Contoh: BKK/2026/10/001" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" oninput="updateBalance()">
+                    </div>
+
+                    <div>
+                        <label for="keterangan" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                            Keterangan <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" id="keterangan" placeholder="Deskripsi ringkas transaksi..." class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" oninput="updateBalance()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body Form: Tabel Dinamis -->
+            <div class="p-6 sm:p-8 space-y-6">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-base font-semibold text-slate-800">Rincian Jurnal (Journal Lines)</h2>
+                        <span class="text-xs text-slate-500">Minimal 1 baris transaksi valid</span>
+                    </div>
+
+                    <!-- Responsive Table Wrapper -->
+                    <div class="overflow-x-auto border border-slate-200 rounded-lg shadow-sm">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100/80 text-slate-700 font-semibold border-b border-slate-200 text-xs uppercase tracking-wider">
+                                    <th class="py-3 px-4 w-1/5">Kode Akun</th>
+                                    <th class="py-3 px-4 w-2/5">Nama Akun</th>
+                                    <th class="py-3 px-4 w-1/5 text-right">Debit (Rp)</th>
+                                    <th class="py-3 px-4 w-1/5 text-right">Kredit (Rp)</th>
+                                    <th class="py-3 px-3 w-12 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="journal-lines" class="divide-y divide-slate-200 bg-white">
+                                <!-- Baris dinamis akan di-render di sini lewat JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Tombol Tambah Baris -->
+                    <div class="mt-4">
+                        <button type="button" onclick="addRow()" class="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-3.5 py-2 rounded-lg border border-indigo-200 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Tambah Baris
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Balance Indicator Section -->
+                <div class="pt-4 border-t border-slate-100">
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Ringkasan & Indikator Keseimbangan</h3>
+                    
+                    <!-- Grid 3 Kartu Total -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                        <!-- Total Debit -->
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                            <span class="text-xs text-slate-500 font-medium block mb-1">Total Debit</span>
+                            <span id="card-total-debit" class="text-lg font-bold text-slate-800">Rp 0</span>
+                        </div>
+
+                        <!-- Total Kredit -->
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                            <span class="text-xs text-slate-500 font-medium block mb-1">Total Kredit</span>
+                            <span id="card-total-kredit" class="text-lg font-bold text-slate-800">Rp 0</span>
+                        </div>
+
+                        <!-- Selisih -->
+                        <div id="card-selisih-wrapper" class="bg-slate-50 border border-slate-200 p-4 rounded-xl transition-colors">
+                            <span class="text-xs text-slate-500 font-medium block mb-1">Selisih</span>
+                            <span id="card-selisih" class="text-lg font-bold text-slate-800">Rp 0</span>
+                        </div>
+                    </div>
+
+                    <!-- Badge Status Balance Besar -->
+                    <div id="balance-badge" class="p-4 rounded-xl border text-center font-bold text-base transition-all duration-300 flex items-center justify-center gap-2 bg-rose-50 border-rose-200 text-rose-700">
+                        <span>❌ TIDAK BALANCE (Selisih: Rp 0)</span>
+                    </div>
+                </div>
+
+                <!-- Section Tombol Submit -->
+                <div class="pt-6 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-3">
+                    <button type="button" onclick="resetForm()" class="px-5 py-3 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 font-medium text-sm transition-colors">
+                        Reset Form
+                    </button>
+                    <button type="button" id="btn-submit" onclick="validateAndSubmit()" disabled class="w-full sm:w-auto px-8 py-3 bg-slate-300 text-slate-500 font-semibold rounded-lg shadow-sm cursor-not-allowed transition-all duration-200 text-sm tracking-wide">
+                        POSTING VOUCHER
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal Modal Pratinjau JSON Payload (Pengganti Alert) -->
+    <div id="modal-success" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 space-y-4 border border-slate-100 animate-in fade-in zoom-in duration-200">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2 text-emerald-600 font-bold text-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Voucher Berhasil Diposting!
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            <p class="text-sm text-slate-600">Payload JSON telah berhasil dibuat dan dicetak ke konsol browser (`console.log`). Berikut detail payload data:</p>
+            <div class="bg-slate-950 text-emerald-400 p-4 rounded-lg text-xs font-mono overflow-x-auto max-h-72">
+                <pre id="json-preview"></pre>
+            </div>
+            <div class="flex justify-end pt-2">
+                <button onclick="closeModal()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    Tutup & Buat Transaksi Baru
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logic Vanilla JS -->
+    <script>
+
+        /**
+         * Mengisi tanggal default hari ini pada saat halaman selesai dimuat.
+         * Menambahkan 2 baris kosong pertama secara dinamis.
+         */
+        window.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('tanggal').value = today;
+            
+            // Tambahkan 2 baris awal kosong sesuai spesifikasi
+            addRow();
+            addRow();
+            
+            updateBalance();
+        });
+
+        /**
+         * Menambahkan baris baru ke tabel jurnal.
+         */
+        function addRow() {
+            const tbody = document.getElementById('journal-lines');
+            const row = document.createElement('tr');
+            row.className = 'journal-row transition-colors hover:bg-slate-50/80';
+
+            row.innerHTML = `
+                <td class="py-2.5 px-4">
+                    <input type="text" placeholder="mis. 1101" class="kode-akun w-full px-2.5 py-1.5 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" oninput="updateBalance()">
+                </td>
+                <td class="py-2.5 px-4">
+                    <input type="text" placeholder="mis. Kas Kecil" class="nama-akun w-full px-2.5 py-1.5 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" oninput="updateBalance()">
+                </td>
+                <td class="py-2.5 px-4">
+                    <input type="text" inputmode="numeric" placeholder="0" class="input-debit w-full px-2.5 py-1.5 border border-slate-300 rounded-md text-sm text-right focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" oninput="handleAmountInput(this, 'debit')">
+                </td>
+                <td class="py-2.5 px-4">
+                    <input type="text" inputmode="numeric" placeholder="0" class="input-kredit w-full px-2.5 py-1.5 border border-slate-300 rounded-md text-sm text-right focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" oninput="handleAmountInput(this, 'kredit')">
+                </td>
+                <td class="py-2.5 px-3 text-center">
+                    <button type="button" onclick="removeRow(this)" class="btn-delete text-rose-500 hover:text-rose-700 hover:bg-rose-50 w-8 h-8 rounded-full inline-flex items-center justify-center font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors" title="Hapus Baris">
+                        &times;
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(row);
+            updateDeleteButtons();
+            updateBalance();
+        }
+
+        /**
+         * Menghapus baris terpilih dari tabel jurnal.
+         * @param {HTMLElement} button - Tombol hapus yang diklik
+         */
+        function removeRow(button) {
+            const rows = document.querySelectorAll('.journal-row');
+            if (rows.length > 1) {
+                const tr = button.closest('tr');
+                tr.remove();
+                updateDeleteButtons();
+                updateBalance();
+            }
+        }
+
+        /**
+         * Memperbarui status aktif/nonaktif tombol hapus di setiap baris.
+         * Jika hanya ada 1 baris, tombol hapus akan di-disable.
+         */
+        function updateDeleteButtons() {
+            const deleteButtons = document.querySelectorAll('.btn-delete');
+            const isSingleRow = deleteButtons.length <= 1;
+
+            deleteButtons.forEach(btn => {
+                btn.disabled = isSingleRow;
+            });
+        }
+
+
+        /**
+         * Memformat angka string menjadi format ribuan Indonesia (misal: 1000000 -> 1.000.000).
+         * @param {string|number} value - Nilai angka yang akan diformat
+         * @returns {string} String terformat ribuan
+         */
+        function formatThousands(value) {
+            if (!value) return '';
+            // Hapus semua karakter non-digit
+            const cleanNum = value.toString().replace(/\D/g, '');
+            if (!cleanNum) return '';
+            return parseInt(cleanNum, 10).toLocaleString('id-ID');
+        }
+
+        /**
+         * Mengembalikan angka murni dari string terformat ribuan.
+         * @param {string} formattedStr - String angka dengan pemisah titik
+         * @returns {number} Nilai numerik asli
+         */
+        function parseFormattedNumber(formattedStr) {
+            if (!formattedStr) return 0;
+            const cleanNum = formattedStr.replace(/\D/g, '');
+            return cleanNum ? parseInt(cleanNum, 10) : 0;
+        }
+
+        /**
+         * Mengatur logika input uang (Debit & Kredit):
+         * 1. Mengaplikasikan masker ribuan secara otomatis.
+         * 2. Menjamin saling hapus (Mutual Exclusivity): Jika Debit diisi, Kredit dikosongkan (dan sebaliknya).
+         * @param {HTMLInputElement} input - Input yang sedang diketik
+         * @param {'debit'|'kredit'} type - Jenis field yang diubah
+         */
+        function handleAmountInput(input, type) {
+            // Ambil nilai mentah & format ulang
+            const rawValue = input.value;
+            const numericValue = parseFormattedNumber(rawValue);
+
+            if (numericValue > 0) {
+                input.value = formatThousands(numericValue);
+            } else {
+                input.value = '';
+            }
+
+            // Saling hapus: Kosongkan field pasangan dalam baris yang sama jika diisi > 0
+            const row = input.closest('tr');
+            if (numericValue > 0) {
+                if (type === 'debit') {
+                    const kreditInput = row.querySelector('.input-kredit');
+                    kreditInput.value = '';
+                } else if (type === 'kredit') {
+                    const debitInput = row.querySelector('.input-debit');
+                    debitInput.value = '';
+                }
+            }
+
+            // Recompute kalkulasi & validasi
+            updateBalance();
+        }
+
+
+        /**
+         * Fungsi utama kalkulasi ulang Total Debit, Total Kredit, Selisih,
+         * serta memvalidasi syarat posting voucher.
+         */
+        function updateBalance() {
+            let totalDebit = 0;
+            let totalKredit = 0;
+            let invalidRowFound = false;
+
+            const rows = document.querySelectorAll('.journal-row');
+
+            rows.forEach(row => {
+                const debitVal = parseFormattedNumber(row.querySelector('.input-debit').value);
+                const kreditVal = parseFormattedNumber(row.querySelector('.input-kredit').value);
+                const kodeAkun = row.querySelector('.kode-akun').value.trim();
+                const namaAkun = row.querySelector('.nama-akun').value.trim();
+
+                totalDebit += debitVal;
+                totalKredit += kreditVal;
+
+                // Cek jika ada baris yang sama sekali tidak diisi debit & kreditnya (keduanya 0)
+                // ATAU kode/nama akun masih kosong
+                if ((debitVal === 0 && kreditVal === 0) || !kodeAkun || !namaAkun) {
+                    invalidRowFound = true;
+                }
+            });
+
+            const selisih = Math.abs(totalDebit - totalKredit);
+            const isBalanced = (totalDebit === totalKredit) && totalDebit > 0;
+
+            // Update Tampilan 3 Kartu Ringkasan
+            document.getElementById('card-total-debit').innerText = 'Rp ' + formatThousands(totalDebit || 0);
+            document.getElementById('card-total-kredit').innerText = 'Rp ' + formatThousands(totalKredit || 0);
+            
+            const cardSelisihText = document.getElementById('card-selisih');
+            const cardSelisihWrapper = document.getElementById('card-selisih-wrapper');
+            cardSelisihText.innerText = 'Rp ' + formatThousands(selisih);
+
+            // Update Badge Status Keseimbangan (Besar)
+            const balanceBadge = document.getElementById('balance-badge');
+
+            if (isBalanced) {
+                balanceBadge.className = "p-4 rounded-xl border text-center font-bold text-base transition-all duration-300 flex items-center justify-center gap-2 bg-emerald-50 border-emerald-200 text-emerald-800 shadow-sm";
+                balanceBadge.innerHTML = '<span>✅ BALANCE</span>';
+
+                cardSelisihWrapper.className = "bg-emerald-50/50 border border-emerald-200 p-4 rounded-xl transition-colors";
+                cardSelisihText.className = "text-lg font-bold text-emerald-700";
+            } else {
+                balanceBadge.className = "p-4 rounded-xl border text-center font-bold text-base transition-all duration-300 flex items-center justify-center gap-2 bg-rose-50 border-rose-200 text-rose-800 shadow-sm";
+                balanceBadge.innerHTML = `<span>❌ TIDAK BALANCE (Selisih: Rp ${formatThousands(selisih)})</span>`;
+
+                cardSelisihWrapper.className = "bg-rose-50/50 border border-rose-200 p-4 rounded-xl transition-colors";
+                cardSelisihText.className = "text-lg font-bold text-rose-700";
+            }
+
+            // Validasi Input Header Wajib
+            const tanggal = document.getElementById('tanggal').value.trim();
+            const noVoucher = document.getElementById('noVoucher').value.trim();
+            const keterangan = document.getElementById('keterangan').value.trim();
+
+            const isHeaderValid = tanggal !== '' && noVoucher !== '' && keterangan !== '';
+
+            // Evaluasi Syarat Aktif Tombol Posting Voucher
+            const btnSubmit = document.getElementById('btn-submit');
+            const isValidForSubmit = isHeaderValid && isBalanced && !invalidRowFound && totalDebit > 0;
+
+            if (isValidForSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.className = "w-full sm:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg cursor-pointer transition-all duration-200 text-sm tracking-wide transform active:scale-95";
+            } else {
+                btnSubmit.disabled = true;
+                btnSubmit.className = "w-full sm:w-auto px-8 py-3 bg-slate-200 text-slate-400 font-semibold rounded-lg shadow-none cursor-not-allowed transition-all duration-200 text-sm tracking-wide";
+            }
+        }
+
+
+        /**
+         * Mengumpulkan data, membuat JSON payload, mencetak ke console.log,
+         * dan menampilkan dialog modal sukses.
+         */
+        function validateAndSubmit() {
+            const tanggal = document.getElementById('tanggal').value;
+            const noVoucher = document.getElementById('noVoucher').value;
+            const keterangan = document.getElementById('keterangan').value;
+
+            const lines = [];
+            let totalDebit = 0;
+            let totalKredit = 0;
+
+            document.querySelectorAll('.journal-row').forEach(row => {
+                const kodeAkun = row.querySelector('.kode-akun').value;
+                const namaAkun = row.querySelector('.nama-akun').value;
+                const debit = parseFormattedNumber(row.querySelector('.input-debit').value);
+                const kredit = parseFormattedNumber(row.querySelector('.input-kredit').value);
+
+                totalDebit += debit;
+                totalKredit += kredit;
+
+                lines.push({
+                    kode_akun: kodeAkun,
+                    nama_akun: namaAkun,
+                    debit: debit,
+                    kredit: kredit
+                });
+            });
+
+            // Konstruksi objek payload JSON
+            const payload = {
+                voucher_header: {
+                    tanggal: tanggal,
+                    nomor_voucher: noVoucher,
+                    keterangan: keterangan,
+                    total_debit: totalDebit,
+                    total_kredit: totalKredit,
+                    status: "BALANCE"
+                },
+                journal_lines: lines,
+                posted_at: new Date().toISOString()
+            };
+
+            // Cetak hasil ke konsol browser sesuai perintah
+            console.log("=== POSTING VOUCHER PAYLOAD ===");
+            console.log(JSON.stringify(payload, null, 2));
+
+            // Tampilkan modal responsif dengan pratinjau JSON
+            document.getElementById('json-preview').innerText = JSON.stringify(payload, null, 2);
+            const modal = document.getElementById('modal-success');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        /**
+         * Menutup modal pratinjau.
+         */
+        function closeModal() {
+            const modal = document.getElementById('modal-success');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        /**
+         * Membersihkan seluruh isi form ke keadaan awal.
+         */
+        function resetForm() {
+            document.getElementById('noVoucher').value = '';
+            document.getElementById('keterangan').value = '';
+            
+            const tbody = document.getElementById('journal-lines');
+            tbody.innerHTML = '';
+            
+            // Re-initialise 2 baris kosong awal
+            addRow();
+            addRow();
+            
+            updateBalance();
+        }
+    </script>
+</body>
+</html>
